@@ -35,7 +35,7 @@ public class PathUtils {
                 final String type = split[0];
 
                 if ("primary".equalsIgnoreCase(type)) {
-                    return Environment.getExternalStorageDirectory() + "/" + split[1];
+                    return context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) + "/" + split[1];
                 }
 
                 // TODO handle non-primary volumes
