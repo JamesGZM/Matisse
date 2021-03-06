@@ -17,14 +17,14 @@ public class FragmentResult {
     }
 
     public static ResultFragment get(FragmentActivity activity) {
-        return new FragmentResult().getHolderFragment(activity.getSupportFragmentManager());
+        return new FragmentResult().getResultFragment(activity.getSupportFragmentManager());
     }
 
     public static ResultFragment get(Fragment fragment) {
-        return new FragmentResult().getHolderFragment(fragment.getChildFragmentManager());
+        return new FragmentResult().getResultFragment(fragment.getChildFragmentManager());
     }
 
-    private ResultFragment getHolderFragment(FragmentManager fragmentManager) {
+    private ResultFragment getResultFragment(FragmentManager fragmentManager) {
         ResultFragment resultFragment = (ResultFragment) fragmentManager.findFragmentByTag(TAG);
         if (resultFragment == null) {
             resultFragment = new ResultFragment();
