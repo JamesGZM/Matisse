@@ -1,7 +1,6 @@
 ![Image](/image/banner.png)
 
 # Matisse
-[![Build Status](https://travis-ci.org/zhihu/Matisse.svg)](https://travis-ci.org/zhihu/Matisse) [ ![Download](https://api.bintray.com/packages/zhihu/maven/matisse/images/download.svg) ](https://bintray.com/zhihu/maven/matisse/_latestVersion)
 
 Matisse is a well-designed local image and video selector for Android. You can  
 - Use it in Activity or Fragment
@@ -20,29 +19,15 @@ Gradle:
 
 ```groovy
 repositories {
-    jcenter()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
-    implementation 'com.zhihu.android:matisse:$latest_version'
+    implementation 'com.github.JamesGZM:Matisse:v0.6.1'
 }
 ```
 
 Check out [Matisse releases](https://github.com/zhihu/Matisse/releases) to see more unstable versions.
-
-## ProGuard
-If you use [Glide](https://github.com/bumptech/glide) as your image engine, add rules as Glide's README says.  
-And add extra rule:
-```pro
--dontwarn com.squareup.picasso.**
-```
-
-If you use [Picasso](https://github.com/square/picasso) as your image engine, add rules as Picasso's README says.  
-And add extra rule:
-```pro
--dontwarn com.bumptech.glide.**
-```
-**Attention**: The above progurad rules are correct.
 
 ## How do I use Matisse?
 #### Permission
@@ -67,7 +52,7 @@ Matisse.from(MainActivity.this)
         .thumbnailScale(0.85f)
         .imageEngine(new GlideEngine())
         .showPreview(false) // Default is `true`
-        .forResult(REQUEST_CODE_CHOOSE);
+        .forResult(REQUEST_CODE_CHOOSE); // start
 ```
  
 #### Themes
