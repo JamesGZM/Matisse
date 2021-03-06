@@ -1,0 +1,8 @@
+-keep class com.zhihu.matisse.weight.ZoomableDraweeView
+-keep class com.zhihu.matisse.SelectionCreator
+-keep class com.zhihu.matisse.MimeType
+-keep class com.zhihu.matisse.Matisse
+-keep class com.zhihu.matisse.internal.ui.widget.** { *; }
+-keep class com.zhihu.matisse.internal.entity.** { *; }
+-keep class com.zhihu.matisse.filter.** { *; }
+-keep class com.zhihu.matisse.internal.callback.ResultCallback

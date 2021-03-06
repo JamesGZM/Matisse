@@ -62,8 +62,6 @@ public class AlbumMediaCollection implements LoaderManager.LoaderCallbacks<Curso
         if (context == null) {
             return;
         }
-
-        Log.d("测试", "加载");
         mCallbacks.onAlbumMediaLoad(data);
     }
 
