@@ -36,6 +36,7 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 import com.zhihu.matisse.Matisse;
 import com.zhihu.matisse.MimeType;
 import com.zhihu.matisse.filter.Filter;
+import com.zhihu.matisse.internal.callback.ResultCallback;
 
 import java.util.List;
 
@@ -126,7 +127,12 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
                         .originalEnable(true)
                         .maxOriginalSize(10)
                         .autoHideToolbarOnSingleTap(true)
-                        .forResult(REQUEST_CODE_CHOOSE);
+                        .start(new ResultCallback() {
+                            @Override
+                            public void onResult(List<Uri> uris, List<String> paths) {
+                                mAdapter.setData(uris, paths);
+                            }
+                        });
                 break;
             default:
                 break;

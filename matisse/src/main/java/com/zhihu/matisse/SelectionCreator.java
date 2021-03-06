@@ -26,8 +26,11 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.StyleRes;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import com.zhihu.matisse.filter.Filter;
+import com.zhihu.matisse.internal.callback.FragmentResult;
+import com.zhihu.matisse.internal.callback.ResultCallback;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
 import com.zhihu.matisse.listener.OnCheckedListener;
 import com.zhihu.matisse.listener.OnSelectedListener;
@@ -347,6 +350,14 @@ public final class SelectionCreator {
         } else {
             activity.startActivityForResult(intent, requestCode);
         }
+    }
+
+    public void start(ResultCallback callback) {
+        Activity activity = mMatisse.getActivity();
+        if (activity == null) {
+            return;
+        }
+        FragmentResult.get((FragmentActivity) activity).startSelect(callback);
     }
 
     public SelectionCreator showPreview(boolean showPreview) {
