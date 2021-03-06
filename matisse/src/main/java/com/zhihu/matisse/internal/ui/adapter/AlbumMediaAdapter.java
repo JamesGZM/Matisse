@@ -217,6 +217,8 @@ public class AlbumMediaAdapter extends
     }
 
 
+
+
     public void registerCheckStateListener(CheckStateListener listener) {
         mCheckStateListener = listener;
     }

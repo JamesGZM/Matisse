@@ -16,35 +16,30 @@
 package com.zhihu.matisse.internal.utils;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+
 import androidx.fragment.app.Fragment;
 import androidx.core.content.FileProvider;
-import androidx.core.os.EnvironmentCompat;
-
-import com.zhihu.matisse.internal.entity.CaptureStrategy;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 public class MediaStoreCompat {
 
     private final WeakReference<Activity> mContext;
     private final WeakReference<Fragment> mFragment;
-    private       CaptureStrategy         mCaptureStrategy;
-    private       Uri                     mCurrentPhotoUri;
-    private       String                  mCurrentPhotoPath;
+    private String authority;
+    private Uri photoUri = null;
+    private File mTempImageFile = null;
 
     public MediaStoreCompat(Activity activity) {
         mContext = new WeakReference<>(activity);
@@ -67,79 +62,121 @@ public class MediaStoreCompat {
         return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
 
-    public void setCaptureStrategy(CaptureStrategy strategy) {
-        mCaptureStrategy = strategy;
+    public void setAuthority(String authority) {
+        this.authority = authority;
     }
 
     public void dispatchCaptureIntent(Context context, int requestCode) {
-        Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (captureIntent.resolveActivity(context.getPackageManager()) != null) {
-            File photoFile = null;
-            try {
-                photoFile = createImageFile();
-            } catch (IOException e) {
-                e.printStackTrace();
+
+        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        photoUri = null;
+        mTempImageFile = null;
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+            photoUri = createImageUri();
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            cameraIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            if (mFragment != null) {
+                mFragment.get().startActivityForResult(cameraIntent, requestCode);
+            } else {
+                mContext.get().startActivityForResult(cameraIntent, requestCode);
+            }
+            return;
+        }
+
+        createCameraTempImageFile();
+        if (mTempImageFile != null && mTempImageFile.exists()) {
+
+            Uri imageUri;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                imageUri = FileProvider.getUriForFile(context, authority, mTempImageFile);
+            } else {
+                imageUri = Uri.fromFile(mTempImageFile);
             }
 
-            if (photoFile != null) {
-                mCurrentPhotoPath = photoFile.getAbsolutePath();
-                mCurrentPhotoUri = FileProvider.getUriForFile(mContext.get(),
-                        mCaptureStrategy.authority, photoFile);
-                captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, mCurrentPhotoUri);
-                captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    List<ResolveInfo> resInfoList = context.getPackageManager()
-                            .queryIntentActivities(captureIntent, PackageManager.MATCH_DEFAULT_ONLY);
-                    for (ResolveInfo resolveInfo : resInfoList) {
-                        String packageName = resolveInfo.activityInfo.packageName;
-                        context.grantUriPermission(packageName, mCurrentPhotoUri,
-                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    }
-                }
-                if (mFragment != null) {
-                    mFragment.get().startActivityForResult(captureIntent, requestCode);
-                } else {
-                    mContext.get().startActivityForResult(captureIntent, requestCode);
-                }
+            cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); //对目标应用临时授权该Uri所代表的文件
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);//将拍取的照片保存到指定URI
+            if (mFragment != null) {
+                mFragment.get().startActivityForResult(cameraIntent, requestCode);
+            } else {
+                mContext.get().startActivityForResult(cameraIntent, requestCode);
             }
+        }
+
+    }
+
+    /**
+     * 创建图片地址uri,用于保存拍照后的照片 Android 10以后使用这种方法
+     */
+    private Uri createImageUri() {
+        String status = Environment.getExternalStorageState();
+        // 判断是否有SD卡,优先使用SD卡存储,当没有SD卡时使用手机存储
+        if (status.equals(Environment.MEDIA_MOUNTED)) {
+            return mContext.get().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    new ContentValues());
+        } else {
+            return mContext.get().getContentResolver().insert(MediaStore.Images.Media.INTERNAL_CONTENT_URI,
+                    new ContentValues());
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        String timeStamp =
-                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = String.format("JPEG_%s.jpg", timeStamp);
-        File storageDir;
-        if (mCaptureStrategy.isPublic) {
-            storageDir = Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_PICTURES);
-            if (!storageDir.exists()) storageDir.mkdirs();
-        } else {
-            storageDir = mContext.get().getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-        }
-        if (mCaptureStrategy.directory != null) {
-            storageDir = new File(storageDir, mCaptureStrategy.directory);
-            if (!storageDir.exists()) storageDir.mkdirs();
-        }
 
-        // Avoid joining path components manually
-        File tempFile = new File(storageDir, imageFileName);
-
-        // Handle the situation that user's external storage is not ready
-        if (!Environment.MEDIA_MOUNTED.equals(EnvironmentCompat.getStorageState(tempFile))) {
-            return null;
+    private void createCameraTempImageFile() {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        if (null == dir) {
+            dir = new File(Environment.getExternalStorageDirectory(),
+                    File.separator + "DCIM" + File.separator + "Camera" + File.separator);
+        }
+        if (!dir.isDirectory()) {
+            if (!dir.mkdirs()) {
+                dir = mContext.get().getExternalFilesDir(null);
+                if (null == dir || !dir.exists()) {
+                    dir = mContext.get().getFilesDir();
+                    if (null == dir || !dir.exists()) {
+                        String cacheDirPath =
+                                File.separator + "data" + File.separator + "data" + File.separator + mContext.get().getPackageName() + File.separator + "cache" + File.separator;
+                        dir = new File(cacheDirPath);
+                        if (!dir.exists()) {
+                            dir.mkdirs();
+                        }
+                    }
+                }
+            }
         }
 
-        return tempFile;
+        try {
+            mTempImageFile = File.createTempFile("IMG", ".jpg", dir);
+        } catch (IOException e) {
+            e.printStackTrace();
+            mTempImageFile = null;
+        }
+
     }
 
     public Uri getCurrentPhotoUri() {
-        return mCurrentPhotoUri;
+        return photoUri;
     }
 
-    public String getCurrentPhotoPath() {
-        return mCurrentPhotoPath;
+    public File getTempImageFile() {
+        return mTempImageFile;
     }
+
+//    public String getCurrentPhotoPath() {
+//
+//        if (photoUri != null) {
+//            Cursor cursor = mContext.get().getContentResolver().query(photoUri, null, null, null, null);
+//            if (cursor == null) {
+//                return null;
+//            }
+//            String path = null;
+//            if (cursor.moveToFirst()) {
+//                path = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
+//
+//            }
+//            cursor.close();
+//            return path;
+//        }
+//        return mTempImageFile.getAbsolutePath();
+//    }
 }

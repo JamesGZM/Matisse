@@ -16,10 +16,10 @@
   -->
 <merge xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <ImageView
+    <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/media_thumbnail"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
     <com.zhihu.matisse.internal.ui.widget.CheckView
         android:id="@+id/check_view"

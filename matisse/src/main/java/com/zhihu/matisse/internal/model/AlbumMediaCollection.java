@@ -19,6 +19,8 @@ package com.zhihu.matisse.internal.model;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
@@ -61,6 +63,7 @@ public class AlbumMediaCollection implements LoaderManager.LoaderCallbacks<Curso
             return;
         }
 
+        Log.d("测试", "加载");
         mCallbacks.onAlbumMediaLoad(data);
     }
 
@@ -96,6 +99,13 @@ public class AlbumMediaCollection implements LoaderManager.LoaderCallbacks<Curso
         args.putParcelable(ARGS_ALBUM, target);
         args.putBoolean(ARGS_ENABLE_CAPTURE, enableCapture);
         mLoaderManager.initLoader(LOADER_ID, args, this);
+    }
+
+    public void restart(@Nullable Album target, boolean enableCapture) {
+        Bundle args = new Bundle();
+        args.putParcelable(ARGS_ALBUM, target);
+        args.putBoolean(ARGS_ENABLE_CAPTURE, enableCapture);
+        mLoaderManager.restartLoader(LOADER_ID, args, this);
     }
 
     public interface AlbumMediaCallbacks {

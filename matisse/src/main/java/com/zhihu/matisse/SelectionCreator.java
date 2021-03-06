@@ -19,6 +19,7 @@ package com.zhihu.matisse;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,9 +27,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.StyleRes;
 import androidx.fragment.app.Fragment;
 
-import com.zhihu.matisse.engine.ImageEngine;
 import com.zhihu.matisse.filter.Filter;
-import com.zhihu.matisse.internal.entity.CaptureStrategy;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
 import com.zhihu.matisse.listener.OnCheckedListener;
 import com.zhihu.matisse.listener.OnSelectedListener;
@@ -163,7 +162,7 @@ public final class SelectionCreator {
      *
      * @param maxImageSelectable Maximum selectable count for image.
      * @param maxVideoSelectable Maximum selectable count for video.
-     * @return  {@link SelectionCreator} for fluent API.
+     * @return {@link SelectionCreator} for fluent API.
      */
     public SelectionCreator maxSelectablePerMediaType(int maxImageSelectable, int maxVideoSelectable) {
         if (maxImageSelectable < 1 || maxVideoSelectable < 1)
@@ -216,6 +215,7 @@ public final class SelectionCreator {
 
     /**
      * Determines Whether to hide top and bottom toolbar in PreView mode ,when user tap the picture
+     *
      * @param enable
      * @return {@link SelectionCreator} for fluent API.
      */
@@ -239,11 +239,11 @@ public final class SelectionCreator {
      * Capture strategy provided for the location to save photos including internal and external
      * storage and also a authority for {@link androidx.core.content.FileProvider}.
      *
-     * @param captureStrategy {@link CaptureStrategy}, needed only when capturing is enabled.
-     * @return {@link SelectionCreator} for fluent API.
+     * @param authority needed only when capturing is enabled.
+     * @return for fluent API.
      */
-    public SelectionCreator captureStrategy(CaptureStrategy captureStrategy) {
-        mSelectionSpec.captureStrategy = captureStrategy;
+    public SelectionCreator authority(String authority) {
+        mSelectionSpec.authority = authority;
         return this;
     }
 
@@ -301,21 +301,6 @@ public final class SelectionCreator {
         return this;
     }
 
-    /**
-     * Provide an image engine.
-     * <p>
-     * There are two built-in image engines:
-     * 1. {@link com.zhihu.matisse.engine.impl.GlideEngine}
-     * 2. {@link com.zhihu.matisse.engine.impl.PicassoEngine}
-     * And you can implement your own image engine.
-     *
-     * @param imageEngine {@link ImageEngine}
-     * @return {@link SelectionCreator} for fluent API.
-     */
-    public SelectionCreator imageEngine(ImageEngine imageEngine) {
-        mSelectionSpec.imageEngine = imageEngine;
-        return this;
-    }
 
     /**
      * Set listener for callback immediately when user select or unselect something.

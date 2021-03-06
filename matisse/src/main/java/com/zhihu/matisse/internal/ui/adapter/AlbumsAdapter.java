@@ -26,6 +26,13 @@ import android.widget.CursorAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.controller.BaseControllerListener;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.drawee.view.SimpleDraweeView;
+import com.facebook.imagepipeline.common.ResizeOptions;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.zhihu.matisse.R;
 import com.zhihu.matisse.internal.entity.Album;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
@@ -33,6 +40,8 @@ import com.zhihu.matisse.internal.entity.SelectionSpec;
 public class AlbumsAdapter extends CursorAdapter {
 
     private final Drawable mPlaceholder;
+    private float mDensity;
+    private final int SIZE = 40; //dp
 
     public AlbumsAdapter(Context context, Cursor c, boolean autoRequery) {
         super(context, c, autoRequery);
@@ -41,6 +50,8 @@ public class AlbumsAdapter extends CursorAdapter {
                 new int[]{R.attr.album_thumbnail_placeholder});
         mPlaceholder = ta.getDrawable(0);
         ta.recycle();
+
+        mDensity = context.getResources().getDisplayMetrics().density;
     }
 
     public AlbumsAdapter(Context context, Cursor c, int flags) {
@@ -50,6 +61,8 @@ public class AlbumsAdapter extends CursorAdapter {
                 new int[]{R.attr.album_thumbnail_placeholder});
         mPlaceholder = ta.getDrawable(0);
         ta.recycle();
+
+        mDensity = context.getResources().getDisplayMetrics().density;
     }
 
     @Override
@@ -64,8 +77,19 @@ public class AlbumsAdapter extends CursorAdapter {
         ((TextView) view.findViewById(R.id.album_media_count)).setText(String.valueOf(album.getCount()));
 
         // do not need to load animated Gif
-        SelectionSpec.getInstance().imageEngine.loadThumbnail(context, context.getResources().getDimensionPixelSize(R
-                        .dimen.media_grid_size), mPlaceholder,
-                (ImageView) view.findViewById(R.id.album_cover), album.getCoverUri());
+        SimpleDraweeView albumCover = view.findViewById(R.id.album_cover);
+
+        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(album.getCoverUri())
+                .setResizeOptions(new ResizeOptions((int) (SIZE * mDensity), (int) (SIZE * mDensity)))
+                .build();
+        DraweeController newController = Fresco.newDraweeControllerBuilder()
+                .setImageRequest(request)
+                .setOldController(albumCover.getController())
+                .build();
+
+        albumCover.setController(newController);
+
+        albumCover.getHierarchy().setPlaceholderImage(mPlaceholder);
+
     }
 }

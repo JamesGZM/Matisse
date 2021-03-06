@@ -39,10 +39,16 @@ dependencies {
     implementation "androidx.appcompat:appcompat:1.1.0"
     implementation "androidx.annotation:annotation:1.1.0"
     implementation "androidx.recyclerview:recyclerview:1.0.0"
-    implementation 'it.sephiroth.android.library.imagezoom:library:1.0.4'
 
-    compileOnly 'com.github.bumptech.glide:glide:4.9.0'
-    compileOnly 'com.squareup.picasso:picasso:2.5.2'
+//    implementation 'it.sephiroth.android.library.imagezoom:library:1.0.4'
+//    compileOnly 'com.github.bumptech.glide:glide:4.9.0'
+//    compileOnly 'com.squareup.picasso:picasso:2.5.2'
+
+    compileOnly 'com.facebook.fresco:fresco:2.4.0'
+    compileOnly 'com.facebook.fresco:animated-gif:2.4.0'
+    compileOnly 'com.facebook.fresco:animated-webp:2.4.0'
+    compileOnly 'com.facebook.fresco:webpsupport:2.4.0'
+    compileOnly 'com.facebook.fresco:imagepipeline-okhttp3:2.4.0'
 
 }
 
@@ -59,7 +65,7 @@ tasks.withType(Javadoc) {
     options.addStringOption('encoding', 'UTF-8')
 }
 
-task checkstyle(type:Checkstyle) {
+task checkstyle(type: Checkstyle) {
     description 'Runs Checkstyle inspection against matisse sourcesets.'
     group = 'Code Quality'
     configFile rootProject.file('checkstyle.xml')

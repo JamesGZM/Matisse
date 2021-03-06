@@ -19,6 +19,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.TypedArray;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -26,12 +27,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -59,7 +63,12 @@ import com.zhihu.matisse.internal.utils.PathUtils;
 import com.zhihu.matisse.internal.utils.PhotoMetadataUtils;
 
 import com.zhihu.matisse.internal.utils.SingleMediaScanner;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Main Activity to display albums and media content (images/videos) in each album
@@ -112,9 +121,9 @@ public class MatisseActivity extends AppCompatActivity implements
 
         if (mSpec.capture) {
             mMediaStoreCompat = new MediaStoreCompat(this);
-            if (mSpec.captureStrategy == null)
+            if (TextUtils.isEmpty(mSpec.authority))
                 throw new RuntimeException("Don't forget to set CaptureStrategy.");
-            mMediaStoreCompat.setCaptureStrategy(mSpec.captureStrategy);
+            mMediaStoreCompat.setAuthority(mSpec.authority);
         }
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -223,28 +232,86 @@ public class MatisseActivity extends AppCompatActivity implements
                 updateBottomToolbar();
             }
         } else if (requestCode == REQUEST_CODE_CAPTURE) {
-            // Just pass the data back to previous calling Activity.
-            Uri contentUri = mMediaStoreCompat.getCurrentPhotoUri();
-            String path = mMediaStoreCompat.getCurrentPhotoPath();
-            ArrayList<Uri> selected = new ArrayList<>();
-            selected.add(contentUri);
-            ArrayList<String> selectedPath = new ArrayList<>();
-            selectedPath.add(path);
-            Intent result = new Intent();
-            result.putParcelableArrayListExtra(EXTRA_RESULT_SELECTION, selected);
-            result.putStringArrayListExtra(EXTRA_RESULT_SELECTION_PATH, selectedPath);
-            setResult(RESULT_OK, result);
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-                MatisseActivity.this.revokeUriPermission(contentUri,
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-            new SingleMediaScanner(this.getApplicationContext(), path, new SingleMediaScanner.ScanListener() {
-                @Override public void onScanFinish() {
-                    Log.i("SingleMediaScanner", "scan finish!");
+            //
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                onCameraResultForQ();
+                return;
+            }
+
+            if (mMediaStoreCompat.getTempImageFile() == null || !mMediaStoreCompat.getTempImageFile().exists()) {
+                throw new RuntimeException("拍照保存的图片不存在");
+            }
+
+            onCameraResult();
+        }
+    }
+
+    private void onCameraResultForQ() {
+        Uri contentUri = mMediaStoreCompat.getCurrentPhotoUri();
+
+        if (contentUri != null) {
+            Cursor cursor = getContentResolver().query(contentUri, null, null, null, null);
+            if (cursor == null) {
+                return;
+            }
+            String path = null;
+            if (cursor.moveToFirst()) {
+                path = cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.DATA));
+
+            }
+            cursor.close();
+
+            if (path == null) return;
+            //更新媒体库
+            new SingleMediaScanner(this.getApplicationContext(), path, () -> {
+                Log.i("SingleMediaScanner", "scan finish!");
+
+                //当前相册
+                Album album = Album.valueOf(mAlbumsAdapter.getCursor());
+                //更新一个上去
+                Fragment mediaSelectionFragment = getSupportFragmentManager().findFragmentByTag(
+                        MediaSelectionFragment.class.getSimpleName());
+                if (mediaSelectionFragment instanceof MediaSelectionFragment) {
+                    new Handler(Looper.getMainLooper()).post(() -> ((MediaSelectionFragment) mediaSelectionFragment).refreshMedia(album));
                 }
             });
-            finish();
         }
+
+    }
+
+    private void onCameraResult() {
+
+        File mTempImageFile = mMediaStoreCompat.getTempImageFile();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HH_mm_ss",
+                Locale.getDefault());
+        String imageName = "IMG_%s.jpg";
+        String filename = String.format(imageName, dateFormat.format(new Date()));
+        File reNameFile = new File(mTempImageFile.getParentFile(), filename);
+        if (!reNameFile.exists()) {
+            if (mTempImageFile.renameTo(reNameFile)) {
+                mTempImageFile = reNameFile;
+            }
+        }
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(mTempImageFile.getAbsolutePath(), options);
+
+        //更新媒体库
+        new SingleMediaScanner(this.getApplicationContext(), mTempImageFile.getAbsolutePath(), () -> {
+            Log.i("SingleMediaScanner", "scan finish!");
+
+            //当前相册
+            Album album = Album.valueOf(mAlbumsAdapter.getCursor());
+            //更新一个上去
+            Fragment mediaSelectionFragment = getSupportFragmentManager().findFragmentByTag(
+                    MediaSelectionFragment.class.getSimpleName());
+            if (mediaSelectionFragment instanceof MediaSelectionFragment) {
+                new Handler(Looper.getMainLooper()).post(() -> ((MediaSelectionFragment) mediaSelectionFragment).refreshMedia(album));
+            }
+        });
+
     }
 
     private void updateBottomToolbar() {

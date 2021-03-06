@@ -20,21 +20,30 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
 import android.os.Bundle;
+
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.drawee.interfaces.DraweeController;
+import com.facebook.imagepipeline.common.ResizeOptions;
+import com.facebook.imagepipeline.request.ImageRequest;
+import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.zhihu.matisse.R;
 import com.zhihu.matisse.internal.entity.Item;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
 import com.zhihu.matisse.internal.utils.PhotoMetadataUtils;
 import com.zhihu.matisse.listener.OnFragmentInteractionListener;
+import com.zhihu.matisse.weight.DefaultZoomableController;
+import com.zhihu.matisse.weight.DoubleTapGestureListener;
+import com.zhihu.matisse.weight.ZoomableController;
+import com.zhihu.matisse.weight.ZoomableDraweeView;
 
-import it.sephiroth.android.library.imagezoom.ImageViewTouch;
-import it.sephiroth.android.library.imagezoom.ImageViewTouchBase;
 
 public class PreviewItemFragment extends Fragment {
 
@@ -81,12 +90,13 @@ public class PreviewItemFragment extends Fragment {
             videoPlayButton.setVisibility(View.GONE);
         }
 
-        ImageViewTouch image = (ImageViewTouch) view.findViewById(R.id.image_view);
-        image.setDisplayType(ImageViewTouchBase.DisplayType.FIT_TO_SCREEN);
+        ZoomableDraweeView image = (ZoomableDraweeView) view.findViewById(R.id.image_view);
 
-        image.setSingleTapListener(new ImageViewTouch.OnImageViewTouchSingleTapListener() {
+        DoubleTapGestureListener doubleTapGestureListener = new DoubleTapGestureListener(image);
+        image.setTapListener(doubleTapGestureListener);
+        doubleTapGestureListener.setOnSingleClick(new DoubleTapGestureListener.OnSingleClickListener() {
             @Override
-            public void onSingleTapConfirmed() {
+            public void onSingleClick() {
                 if (mListener != null) {
                     mListener.onClick();
                 }
@@ -94,18 +104,26 @@ public class PreviewItemFragment extends Fragment {
         });
 
         Point size = PhotoMetadataUtils.getBitmapSize(item.getContentUri(), getActivity());
-        if (item.isGif()) {
-            SelectionSpec.getInstance().imageEngine.loadGifImage(getContext(), size.x, size.y, image,
-                    item.getContentUri());
-        } else {
-            SelectionSpec.getInstance().imageEngine.loadImage(getContext(), size.x, size.y, image,
-                    item.getContentUri());
-        }
+
+        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(item.getContentUri())
+                .setResizeOptions(new ResizeOptions(size.x, size.y))
+                .build();
+        DraweeController newController = Fresco.newDraweeControllerBuilder()
+                .setImageRequest(request)
+                .setOldController(image.getController())
+                .build();
+        image.setController(newController);
+
     }
 
     public void resetView() {
         if (getView() != null) {
-            ((ImageViewTouch) getView().findViewById(R.id.image_view)).resetMatrix();
+
+            ZoomableController controller = ((ZoomableDraweeView) getView().findViewById(R.id.image_view)).getZoomableController();
+
+            if (controller instanceof DefaultZoomableController) {
+                ((DefaultZoomableController) controller).reset();
+            }
         }
     }
 

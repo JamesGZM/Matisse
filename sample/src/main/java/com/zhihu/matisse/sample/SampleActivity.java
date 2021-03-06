@@ -35,10 +35,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 import com.zhihu.matisse.Matisse;
 import com.zhihu.matisse.MimeType;
-import com.zhihu.matisse.engine.impl.GlideEngine;
-import com.zhihu.matisse.engine.impl.PicassoEngine;
 import com.zhihu.matisse.filter.Filter;
-import com.zhihu.matisse.internal.entity.CaptureStrategy;
 
 import java.util.List;
 
@@ -85,15 +82,13 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
                         .choose(MimeType.ofImage(), false)
                         .countable(true)
                         .capture(true)
-                        .captureStrategy(
-                                new CaptureStrategy(true, "com.zhihu.matisse.sample.fileprovider", "test"))
+                        .authority("com.zhihu.matisse.sample.fileprovider")
                         .maxSelectable(9)
                         .addFilter(new GifSizeFilter(320, 320, 5 * Filter.K * Filter.K))
                         .gridExpectedSize(
                                 getResources().getDimensionPixelSize(R.dimen.grid_expected_size))
                         .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
                         .thumbnailScale(0.85f)
-                        .imageEngine(new GlideEngine())
                         .setOnSelectedListener((uriList, pathList) -> {
                             Log.e("onSelected", "onSelected: pathList=" + pathList);
                         })
@@ -115,7 +110,6 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
                         .maxSelectable(9)
                         .originalEnable(true)
                         .maxOriginalSize(10)
-                        .imageEngine(new PicassoEngine())
                         .forResult(REQUEST_CODE_CHOOSE);
                 break;
             case R.id.only_gif:
@@ -128,7 +122,6 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
                                 getResources().getDimensionPixelSize(R.dimen.grid_expected_size))
                         .restrictOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
                         .thumbnailScale(0.85f)
-                        .imageEngine(new GlideEngine())
                         .showSingleMediaType(true)
                         .originalEnable(true)
                         .maxOriginalSize(10)
