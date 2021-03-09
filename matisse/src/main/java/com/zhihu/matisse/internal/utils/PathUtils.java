@@ -1,14 +1,20 @@
 package com.zhihu.matisse.internal.utils;
 
 import android.annotation.TargetApi;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
+import android.os.CancellationSignal;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.util.Size;
+
+import java.io.IOException;
 
 /**
  * http://stackoverflow.com/a/27271131/4739220
@@ -131,5 +137,20 @@ public class PathUtils {
      */
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    public static Bitmap getVideoThumbnailBitmap(Uri sourceUrl, Context context, int width, int height) {
+        //兼容安卓10视频缩略图
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            Size mSize = new Size(width, height);
+            CancellationSignal ca = new CancellationSignal();
+            try {
+                ContentResolver resolver = context.getContentResolver();
+                return resolver.loadThumbnail(sourceUrl, mSize, ca);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }

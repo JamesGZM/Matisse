@@ -18,7 +18,10 @@ package com.zhihu.matisse.internal.ui;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Point;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -37,6 +40,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.zhihu.matisse.R;
 import com.zhihu.matisse.internal.entity.Item;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
+import com.zhihu.matisse.internal.utils.PathUtils;
 import com.zhihu.matisse.internal.utils.PhotoMetadataUtils;
 import com.zhihu.matisse.listener.OnFragmentInteractionListener;
 import com.zhihu.matisse.weight.DefaultZoomableController;
@@ -94,16 +98,21 @@ public class PreviewItemFragment extends Fragment {
 
         DoubleTapGestureListener doubleTapGestureListener = new DoubleTapGestureListener(image);
         image.setTapListener(doubleTapGestureListener);
-        doubleTapGestureListener.setOnSingleClick(new DoubleTapGestureListener.OnSingleClickListener() {
-            @Override
-            public void onSingleClick() {
-                if (mListener != null) {
-                    mListener.onClick();
-                }
+        doubleTapGestureListener.setOnSingleClick(() -> {
+            if (mListener != null) {
+                mListener.onClick();
             }
         });
 
         Point size = PhotoMetadataUtils.getBitmapSize(item.getContentUri(), getActivity());
+
+        if (item.isVideo() && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Bitmap bitmap = PathUtils.getVideoThumbnailBitmap(item.getContentUri(), getContext(), size.x, size.y);
+            if (bitmap != null) {
+                image.getHierarchy().setImage(new BitmapDrawable(getResources(), bitmap), 1, true);
+                return;
+            }
+        }
 
         ImageRequest request = ImageRequestBuilder.newBuilderWithSource(item.getContentUri())
                 .setResizeOptions(new ResizeOptions(size.x, size.y))

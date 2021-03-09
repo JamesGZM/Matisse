@@ -21,6 +21,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.MediaStore;
 
 import androidx.annotation.Nullable;
 
@@ -44,12 +45,14 @@ public class Album implements Parcelable {
     public static final String ALBUM_NAME_ALL = "All";
 
     private final String mId;
+    public final String mimeType;
     private final Uri mCoverUri;
     private final String mDisplayName;
     private long mCount;
 
-    public Album(String id, Uri coverUri, String albumName, long count) {
+    public Album(String id, String mimeType, Uri coverUri, String albumName, long count) {
         mId = id;
+        this.mimeType = mimeType;
         mCoverUri = coverUri;
         mDisplayName = albumName;
         mCount = count;
@@ -57,6 +60,7 @@ public class Album implements Parcelable {
 
     private Album(Parcel source) {
         mId = source.readString();
+        mimeType = source.readString();
         mCoverUri = source.readParcelable(Uri.class.getClassLoader());
         mDisplayName = source.readString();
         mCount = source.readLong();
@@ -70,6 +74,7 @@ public class Album implements Parcelable {
         String clumn = cursor.getString(cursor.getColumnIndex(AlbumLoader.COLUMN_URI));
         return new Album(
                 cursor.getString(cursor.getColumnIndex("bucket_id")),
+                cursor.getString(cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)),
                 Uri.parse(clumn != null ? clumn : ""),
                 cursor.getString(cursor.getColumnIndex("bucket_display_name")),
                 cursor.getLong(cursor.getColumnIndex(AlbumLoader.COLUMN_COUNT)));
@@ -83,6 +88,7 @@ public class Album implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(mId);
+        dest.writeString(mimeType);
         dest.writeParcelable(mCoverUri, 0);
         dest.writeString(mDisplayName);
         dest.writeLong(mCount);

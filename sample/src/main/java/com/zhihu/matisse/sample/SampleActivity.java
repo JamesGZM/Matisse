@@ -80,7 +80,7 @@ public class SampleActivity extends AppCompatActivity implements View.OnClickLis
         switch (v.getId()) {
             case R.id.zhihu:
                 Matisse.from(SampleActivity.this)
-                        .choose(MimeType.ofImage(), false)
+                        .choose(MimeType.ofVideo(), false)
                         .countable(true)
                         .capture(true)
                         .authority("com.zhihu.matisse.sample.fileprovider")

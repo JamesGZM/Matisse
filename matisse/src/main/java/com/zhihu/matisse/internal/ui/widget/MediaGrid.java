@@ -16,12 +16,19 @@
 package com.zhihu.matisse.internal.ui.widget;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.net.Uri;
+import android.os.Build;
+import android.os.CancellationSignal;
 import android.text.format.DateUtils;
 import android.util.AttributeSet;
+import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -36,6 +43,9 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import com.zhihu.matisse.R;
 import com.zhihu.matisse.internal.entity.Item;
 import com.zhihu.matisse.internal.entity.SelectionSpec;
+import com.zhihu.matisse.internal.utils.PathUtils;
+
+import java.io.IOException;
 
 public class MediaGrid extends SquareFrameLayout implements View.OnClickListener {
 
@@ -118,6 +128,15 @@ public class MediaGrid extends SquareFrameLayout implements View.OnClickListener
     }
 
     private void setImage() {
+        mThumbnail.getHierarchy().setPlaceholderImage(mPreBindInfo.mPlaceholder);
+
+        if (mMedia.isVideo() && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Bitmap bitmap = PathUtils.getVideoThumbnailBitmap(mMedia.getContentUri(), getContext(), mPreBindInfo.mResize, mPreBindInfo.mResize);
+            if (bitmap != null) {
+                mThumbnail.getHierarchy().setImage(new BitmapDrawable(getResources(), bitmap), 1, true);
+                return;
+            }
+        }
 
         ImageRequest request = ImageRequestBuilder.newBuilderWithSource(mMedia.getContentUri())
                 .setResizeOptions(new ResizeOptions(mPreBindInfo.mResize, mPreBindInfo.mResize))
@@ -126,10 +145,8 @@ public class MediaGrid extends SquareFrameLayout implements View.OnClickListener
                 .setImageRequest(request)
                 .setOldController(mThumbnail.getController())
                 .build();
-
         mThumbnail.setController(newController);
 
-        mThumbnail.getHierarchy().setPlaceholderImage(mPreBindInfo.mPlaceholder);
     }
 
     private void setVideoDuration() {
