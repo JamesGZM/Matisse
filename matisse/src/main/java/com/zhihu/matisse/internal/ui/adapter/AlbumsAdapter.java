@@ -87,7 +87,7 @@ public class AlbumsAdapter extends CursorAdapter {
         if (MimeType.isVideo(album.mimeType) && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Bitmap bitmap = PathUtils.getVideoThumbnailBitmap(album.getCoverUri(), context, (int) (SIZE * mDensity), (int) (SIZE * mDensity));
             if (bitmap != null) {
-                albumCover.getHierarchy().setImage(new BitmapDrawable(context.getResources(), bitmap), 1, true);
+                albumCover.getHierarchy().setImage(new BitmapDrawable(context.getResources(), bitmap), 1, false);
                 return;
             }
         }

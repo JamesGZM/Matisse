@@ -133,7 +133,7 @@ public class MediaGrid extends SquareFrameLayout implements View.OnClickListener
         if (mMedia.isVideo() && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Bitmap bitmap = PathUtils.getVideoThumbnailBitmap(mMedia.getContentUri(), getContext(), mPreBindInfo.mResize, mPreBindInfo.mResize);
             if (bitmap != null) {
-                mThumbnail.getHierarchy().setImage(new BitmapDrawable(getResources(), bitmap), 1, true);
+                mThumbnail.getHierarchy().setImage(new BitmapDrawable(getResources(), bitmap), 1, false);
                 return;
             }
         }

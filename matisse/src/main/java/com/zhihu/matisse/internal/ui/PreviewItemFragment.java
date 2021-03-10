@@ -109,7 +109,7 @@ public class PreviewItemFragment extends Fragment {
         if (item.isVideo() && android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             Bitmap bitmap = PathUtils.getVideoThumbnailBitmap(item.getContentUri(), getContext(), size.x, size.y);
             if (bitmap != null) {
-                image.getHierarchy().setImage(new BitmapDrawable(getResources(), bitmap), 1, true);
+                image.getHierarchy().setImage(new BitmapDrawable(getResources(), bitmap), 1, false);
                 return;
             }
         }
